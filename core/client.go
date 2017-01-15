@@ -3,26 +3,68 @@ package core
 import (
 	"bytes"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 )
 
+const (
+	// time limit for writing to peer
+	writeWait = 10 * time.Second
+
+	// time limit for reading pong msg from peer
+	pongWait = 60 * time.Second
+
+	// periodicity for sending pings to peer. Must be < pongwiat
+	pingPeriod = (pongWait * 9) / 10
+
+	// msg limit in bytes
+	maxMessageSize = 1024
+)
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
 type Client struct {
-	ID         string
-	conn       *websocket.Conn
-	register   chan *Client
-	unregister chan *Client
-	// server --> [o|u|t] -> client
+	ID      uuid.UUID
+	conn    *websocket.Conn
+	session *Session
+	// session --> [o|u|t] -> client
 	outgoing chan []byte
-	// client --> [i|n] --> server
-	incoming chan []byte
+}
+
+func ServeClient(session *Session, w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	client := &Client{
+		ID:       uuid.NewV4(),
+		conn:     conn,
+		session:  session,
+		outgoing: make(chan []byte, 256),
+	}
+
+	// register client to session
+	client.session.register <- client
+
+	// start writing
+	go client.write()
+
+	// start reading
+	client.read()
 }
 
 func (c *Client) read() {
 	// unregister & close connection upon return
 	defer func() {
-		c.unregister <- c
+		c.session.unregister <- c
 		c.conn.Close()
 	}()
 
@@ -33,7 +75,7 @@ func (c *Client) read() {
 		return nil
 	})
 
-	// begin reading
+	// begin reading from peer
 	for {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
@@ -44,7 +86,50 @@ func (c *Client) read() {
 		}
 
 		// pass incoming message to server
-		msg = bytes.TrimSpace(bytes.Replace(msg, []byte{"\n"}, []byte{" "}, -1))
-		c.incoming <- msg
+		msg = bytes.TrimSpace(bytes.Replace(msg, []byte("\n"), []byte(" "), -1))
+		c.session.incoming <- msg
+	}
+}
+
+func (c *Client) write() {
+	ticker := time.NewTicker(pingPeriod)
+	defer func() {
+		ticker.Stop()
+		c.conn.Close()
+	}()
+
+	// begin writing to peer
+	for {
+		select {
+		case msg, ok := <-c.outgoing:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				// server is closing the connection
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := c.conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			w.Write(msg)
+
+			// add queued messages
+			n := len(c.outgoing)
+			for i := 0; i < n; i++ {
+				w.Write([]byte("\n"))
+				w.Write(<-c.outgoing)
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				return
+			}
+		}
 	}
 }

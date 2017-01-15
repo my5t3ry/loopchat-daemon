@@ -1,16 +1,26 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
 
-type LoopChatDaemon struct {
-	Clients  []Client
-	Sessions map[string][]Connection
+	"github.com/gocraft/web"
+	"github.com/satori/go.uuid"
+)
+
+type Context struct{}
+
+type LoopChat struct {
+	Clients  map[uuid.UUID]*Client
+	Sessions map[uuid.UUID]*Session
 }
 
-func New() (*LoopChatDaemon, error) {
-	return &LoopChatDaemon{}, nil
+func New() (*LoopChat, error) {
+	return &LoopChat{}, nil
 }
 
-func (d *LoopChatDaemon) Start() {
+func (d *LoopChat) Start(addr string) {
+	router := web.New(d)
+	router.Get("/", (*LoopChat).Hello)
 	fmt.Println("starting...")
+
 }
