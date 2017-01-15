@@ -2,19 +2,54 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"log"
+	"net/http"
 
 	"github.com/connorwalsh/loopchat-daemon/core"
+	"github.com/gocraft/web"
 )
 
-var addr = flag.String("addr", ":6666", "http service address")
+var (
+	// CLI flag for daemon port
+	addr = flag.String("addr", ":6666", "http service address")
 
+	// global context for app
+	loopchat = &core.LoopChat{}
+)
+
+type Context struct{}
+
+func (c *Context) JoinSession(rw web.ResponseWriter, req *web.Request) {
+	fmt.Println("ATTEMPTING TO JOIN SESSION")
+
+	// verify whether supplied session ID corresponds to a real session
+
+	// add new client to this existing session
+	//loopchat.JoinSession(sessionID)
+}
+
+func (c *Context) CreateSession(rw web.ResponseWriter, req *web.Request) {
+	fmt.Println("ATTEMPTING TO CREATE NEW SESSION")
+
+	// create new session and add new client
+	//loopchat.CreateSession()
+}
+
+// The LoopChat daemon does not serve the html to the browser currently, but
+// establishes the websockets connections with a page which has been loaded
+// and requests a websockets connection with this daemon.
 func main() {
 	flag.Parse()
 
-	daemon, err := core.New()
-	if err != nil {
-		panic(err)
-	}
+	router := web.New(Context{})
+	router.Get("/ws", (*Context).CreateSession)
+	router.Get("/ws/:sessionID", (*Context).JoinSession)
 
-	daemon.Start(addr)
+	fmt.Println("LoopChat Daemon listening on 127.0.0.1" + *addr + "...")
+
+	err := http.ListenAndServe(*addr, router)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

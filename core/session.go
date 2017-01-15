@@ -21,7 +21,7 @@ func NewSession() *Session {
 	}
 }
 
-func (s *Session) start() {
+func (s *Session) Start() {
 	for {
 		select {
 		case client := <-s.register:
@@ -51,7 +51,7 @@ func (s *Session) start() {
 }
 
 func (s *Session) handle(msg []byte) []byte {
-	var result = []byte{}
+	var result = msg
 
 	return result
 }
