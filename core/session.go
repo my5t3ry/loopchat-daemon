@@ -8,6 +8,7 @@ import (
 
 type Session struct {
 	ID         string
+	FmtID      string
 	Clients    map[string]*Client
 	register   chan *Client
 	unregister chan *Client
@@ -19,6 +20,7 @@ type Session struct {
 func NewSession(id string, end chan *Session) *Session {
 	return &Session{
 		ID:         id,
+		FmtID:      color.RedString("Session " + id),
 		Clients:    make(map[string]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -31,18 +33,14 @@ func (s *Session) Start() {
 	for {
 		select {
 		case client := <-s.register:
-			fmt.Printf("%s %s registering %s %s\n",
-				color.RedString("Session"),
-				color.RedString(s.ID),
-				color.YellowString("Client"),
-				color.YellowString(client.ID))
+			fmt.Printf("%s registering %s\n",
+				s.FmtID,
+				client.FmtName)
 			s.Clients[client.ID] = client
 		case client := <-s.unregister:
-			fmt.Printf("%s %s unregistering %s %s\n",
-				color.RedString("Session"),
-				color.RedString(s.ID),
-				color.YellowString("Client"),
-				color.YellowString(client.ID))
+			fmt.Printf("%s unregistering %s\n",
+				s.FmtID,
+				client.FmtName)
 			if _, ok := s.Clients[client.ID]; ok {
 				delete(s.Clients, client.ID)
 				close(client.outgoing)

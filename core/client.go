@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
@@ -33,6 +34,8 @@ var upgrader = websocket.Upgrader{
 
 type Client struct {
 	ID      string
+	Name    string
+	FmtName string
 	conn    *websocket.Conn
 	session *Session
 	// session --> [o|u|t] -> client
@@ -46,8 +49,13 @@ func ServeClient(id string, session *Session, w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// generate name
+	name := randomdata.SillyName()
+
 	client := &Client{
 		ID:       id,
+		Name:     name,
+		FmtName:  color.YellowString(name),
 		conn:     conn,
 		session:  session,
 		outgoing: make(chan []byte, 256),
@@ -91,9 +99,8 @@ func (c *Client) read() {
 		msg = bytes.TrimSpace(bytes.Replace(msg, []byte("\n"), []byte(" "), -1))
 		c.session.incoming <- msg
 
-		fmt.Printf("Received message from %s %s: %s",
-			color.YellowString("Client"),
-			color.YellowString(c.ID),
+		fmt.Printf("Received message from %s: %s",
+			c.FmtName,
 			color.CyanString(string(msg)))
 	}
 }
