@@ -27,6 +27,7 @@ const (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 type Client struct {
@@ -58,7 +59,7 @@ func ServeClient(session *Session, w http.ResponseWriter, r *http.Request) {
 	go client.write()
 
 	// start reading
-	client.read()
+	go client.read()
 }
 
 func (c *Client) read() {

@@ -1,6 +1,10 @@
 package core
 
-import "github.com/satori/go.uuid"
+import (
+	"fmt"
+
+	"github.com/satori/go.uuid"
+)
 
 type Session struct {
 	ID         uuid.UUID
@@ -9,15 +13,17 @@ type Session struct {
 	unregister chan *Client
 	// client --> [i|n] --> session
 	incoming chan []byte
+	end      chan *Session
 }
 
-func NewSession() *Session {
+func NewSession(end chan *Session) *Session {
 	return &Session{
 		ID:         uuid.NewV4(),
 		Clients:    make(map[uuid.UUID]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		incoming:   make(chan []byte),
+		end:        end,
 	}
 }
 
@@ -25,13 +31,24 @@ func (s *Session) Start() {
 	for {
 		select {
 		case client := <-s.register:
+			fmt.Printf("Session %s registering client %s\n", s.ID, client.ID)
 			s.Clients[client.ID] = client
 		case client := <-s.unregister:
+			fmt.Printf("Session %s unregistering client %s\n", s.ID, client.ID)
 			if _, ok := s.Clients[client.ID]; ok {
 				delete(s.Clients, client.ID)
 				close(client.outgoing)
 			}
-		case msg := <-s.incoming:
+			if len(s.Clients) == 0 {
+				// end session if there are no more clients
+				s.end <- s
+			}
+		case msg, ok := <-s.incoming:
+			if !ok {
+				// session ended
+				return
+			}
+
 			// handle incoming messages
 			result := s.handle(msg)
 
