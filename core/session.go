@@ -1,6 +1,10 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/fatih/color"
+)
 
 type Session struct {
 	ID         string
@@ -27,10 +31,18 @@ func (s *Session) Start() {
 	for {
 		select {
 		case client := <-s.register:
-			fmt.Printf("Session %s registering client %s\n", s.ID, client.ID)
+			fmt.Printf("%s %s registering %s %s\n",
+				color.RedString("Session"),
+				color.RedString(s.ID),
+				color.YellowString("Client"),
+				color.YellowString(client.ID))
 			s.Clients[client.ID] = client
 		case client := <-s.unregister:
-			fmt.Printf("Session %s unregistering client %s\n", s.ID, client.ID)
+			fmt.Printf("%s %s unregistering %s %s\n",
+				color.RedString("Session"),
+				color.RedString(s.ID),
+				color.YellowString("Client"),
+				color.YellowString(client.ID))
 			if _, ok := s.Clients[client.ID]; ok {
 				delete(s.Clients, client.ID)
 				close(client.outgoing)

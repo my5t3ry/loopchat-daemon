@@ -2,10 +2,12 @@ package core
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
 
@@ -88,6 +90,11 @@ func (c *Client) read() {
 		// pass incoming message to server
 		msg = bytes.TrimSpace(bytes.Replace(msg, []byte("\n"), []byte(" "), -1))
 		c.session.incoming <- msg
+
+		fmt.Printf("Received message from %s %s: %s",
+			color.YellowString("Client"),
+			color.YellowString(c.ID),
+			color.CyanString(string(msg)))
 	}
 }
 

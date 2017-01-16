@@ -7,12 +7,13 @@ import (
 	"net/http"
 
 	"github.com/connorwalsh/loopchat-daemon/core"
+	"github.com/fatih/color"
 	"github.com/gocraft/web"
 )
 
 var (
 	// CLI flag for daemon port
-	addr = flag.String("addr", "6666", "http service address")
+	addr = flag.String("addr", "3145", "http service address")
 
 	// global context for app
 	loopchat = core.New()
@@ -46,7 +47,10 @@ func main() {
 	router.Get("/ws", (*Context).CreateSession)
 	router.Get("/ws/:sessionID", (*Context).JoinSession)
 
-	fmt.Println("LoopChat Daemon listening on 127.0.0.1:" + *addr + "...")
+	fmt.Printf("%v listening on %s:%s...\n",
+		color.BlueString("LoopChat Daemon"),
+		color.YellowString("127.0.0.1"),
+		color.GreenString(*addr))
 
 	err := http.ListenAndServe(":"+*addr, router)
 	if err != nil {

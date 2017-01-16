@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 
+	"github.com/fatih/color"
 	"github.com/gocraft/web"
 )
 
@@ -26,11 +27,15 @@ func (l *LoopChat) Run() {
 		case session := <-l.begin:
 			l.Sessions[session.ID] = session
 			go session.Start()
-			fmt.Printf("Beginning Session %s...\n", session.ID)
+			fmt.Printf("Beginning %s %s...\n",
+				color.RedString("Session"),
+				color.RedString(session.ID))
 		case session := <-l.end:
 			delete(l.Sessions, session.ID)
 			close(session.incoming)
-			fmt.Printf("Ending Session %s...\n", session.ID)
+			fmt.Printf("Ending %s %s...\n",
+				color.RedString("Session"),
+				color.RedString(session.ID))
 		}
 	}
 }
