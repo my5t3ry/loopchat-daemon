@@ -4,20 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gocraft/web"
-	"github.com/satori/go.uuid"
 )
 
 type LoopChat struct {
-	Clients  map[uuid.UUID]*Client
-	Sessions map[uuid.UUID]*Session
+	Sessions map[string]*Session
 	begin    chan *Session
 	end      chan *Session
 }
 
 func New() *LoopChat {
 	return &LoopChat{
-		Clients:  make(map[uuid.UUID]*Client),
-		Sessions: make(map[uuid.UUID]*Session),
+		Sessions: make(map[string]*Session),
 		begin:    make(chan *Session),
 		end:      make(chan *Session),
 	}
@@ -29,20 +26,22 @@ func (l *LoopChat) Run() {
 		case session := <-l.begin:
 			l.Sessions[session.ID] = session
 			go session.Start()
-			fmt.Printf("Beginning Session %s...\n", session.ID.String())
+			fmt.Printf("Beginning Session %s...\n", session.ID)
 		case session := <-l.end:
 			delete(l.Sessions, session.ID)
 			close(session.incoming)
-			fmt.Printf("Ending Session %s...\n", session.ID.String())
+			fmt.Printf("Ending Session %s...\n", session.ID)
 		}
 	}
 }
 
 func (l *LoopChat) CreateSession(rw web.ResponseWriter, req *web.Request) {
-	session := NewSession(l.end)
+	sessionID := getHashID()
+	session := NewSession(sessionID, l.end)
 
 	// register session
 	l.begin <- session
 
-	ServeClient(session, rw, req.Request)
+	clientID := getHashID()
+	ServeClient(clientID, session, rw, req.Request)
 }

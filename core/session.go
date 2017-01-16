@@ -1,14 +1,10 @@
 package core
 
-import (
-	"fmt"
-
-	"github.com/satori/go.uuid"
-)
+import "fmt"
 
 type Session struct {
-	ID         uuid.UUID
-	Clients    map[uuid.UUID]*Client
+	ID         string
+	Clients    map[string]*Client
 	register   chan *Client
 	unregister chan *Client
 	// client --> [i|n] --> session
@@ -16,10 +12,10 @@ type Session struct {
 	end      chan *Session
 }
 
-func NewSession(end chan *Session) *Session {
+func NewSession(id string, end chan *Session) *Session {
 	return &Session{
-		ID:         uuid.NewV4(),
-		Clients:    make(map[uuid.UUID]*Client),
+		ID:         id,
+		Clients:    make(map[string]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		incoming:   make(chan []byte),

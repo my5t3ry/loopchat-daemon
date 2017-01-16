@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
 )
 
 const (
@@ -31,14 +30,14 @@ var upgrader = websocket.Upgrader{
 }
 
 type Client struct {
-	ID      uuid.UUID
+	ID      string
 	conn    *websocket.Conn
 	session *Session
 	// session --> [o|u|t] -> client
 	outgoing chan []byte
 }
 
-func ServeClient(session *Session, w http.ResponseWriter, r *http.Request) {
+func ServeClient(id string, session *Session, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -46,7 +45,7 @@ func ServeClient(session *Session, w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &Client{
-		ID:       uuid.NewV4(),
+		ID:       id,
 		conn:     conn,
 		session:  session,
 		outgoing: make(chan []byte, 256),
