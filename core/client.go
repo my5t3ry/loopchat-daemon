@@ -33,9 +33,9 @@ var upgrader = websocket.Upgrader{
 }
 
 type Client struct {
-	ID      string
-	Name    string
-	FmtName string
+	ID      string `json:"-"`
+	Name    string `json:"name"`
+	FmtName string `json:"-"`
 	conn    *websocket.Conn
 	session *Session
 	// session --> [o|u|t] -> client
@@ -99,7 +99,7 @@ func (c *Client) read() {
 		msg = bytes.TrimSpace(bytes.Replace(msg, []byte("\n"), []byte(" "), -1))
 		c.session.incoming <- msg
 
-		fmt.Printf("Received message from %s: %s",
+		fmt.Printf("Received message from %s: %s\n",
 			c.FmtName,
 			color.CyanString(string(msg)))
 	}

@@ -7,9 +7,9 @@ import (
 )
 
 type Session struct {
-	ID         string
-	FmtID      string
-	Clients    map[string]*Client
+	ID         string             `json:"id"`
+	FmtID      string             `json:"-"`
+	Clients    map[string]*Client `json:"peers"`
 	register   chan *Client
 	unregister chan *Client
 	// client --> [i|n] --> session
@@ -37,6 +37,10 @@ func (s *Session) Start() {
 				s.FmtID,
 				client.FmtName)
 			s.Clients[client.ID] = client
+
+			// handle registration
+			go s.HandleRegistration(client)
+
 		case client := <-s.unregister:
 			fmt.Printf("%s unregistering %s\n",
 				s.FmtID,
@@ -56,25 +60,29 @@ func (s *Session) Start() {
 			}
 
 			// handle incoming messages
-			result := s.handle(msg)
-
-			// send result to all clients within session
-			for _, client := range s.Clients {
-				select {
-				case client.outgoing <- result:
-				default:
-					// if we can't reach a client-- shut them down
-					close(client.outgoing)
-					delete(s.Clients, client.ID)
-				}
-			}
+			go s.HandleIncoming(msg)
 		}
 
 	}
 }
 
-func (s *Session) handle(msg []byte) []byte {
-	var result = msg
+func (s *Session) send(msg []byte, clients ...*Client) {
+	for _, client := range clients {
+		select {
+		case client.outgoing <- msg:
+		default:
+			// if we can't reach a client-- shut them down
+			close(client.outgoing)
+			delete(s.Clients, client.ID)
+		}
+	}
+}
 
-	return result
+func (s *Session) GetClients() []*Client {
+	var clients = []*Client{}
+	for _, client := range s.Clients {
+		clients = append(clients, client)
+	}
+
+	return clients
 }
