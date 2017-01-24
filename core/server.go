@@ -50,3 +50,18 @@ func (l *LoopChat) CreateSession(rw web.ResponseWriter, req *web.Request) {
 	clientID := getHashID()
 	ServeClient(clientID, session, rw, req.Request)
 }
+
+func (l *LoopChat) JoinSession(rw web.ResponseWriter, req *web.Request) {
+	sessionID := req.PathParams["sessionID"]
+
+	// check if this is an active sessionID
+	session, ok := l.Sessions[sessionID]
+	if !ok {
+		// if it doesn't exist, just start a new one
+		l.CreateSession(rw, req)
+		return
+	}
+
+	clientID := getHashID()
+	ServeClient(clientID, session, rw, req.Request)
+}

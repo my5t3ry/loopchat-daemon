@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/connorwalsh/loopchat-daemon/core"
 	"github.com/fatih/color"
@@ -22,17 +23,15 @@ var (
 type Context struct{}
 
 func (c *Context) CreateSession(rw web.ResponseWriter, req *web.Request) {
+	// delay connection to test loading indicator
+	time.Sleep(2 * time.Second)
 	// create new session and add new client
 	loopchat.CreateSession(rw, req)
 }
 
 func (c *Context) JoinSession(rw web.ResponseWriter, req *web.Request) {
-	fmt.Println("ATTEMPTING TO JOIN SESSION")
-
-	// verify whether supplied session ID corresponds to a real session
-
 	// add new client to this existing session
-	//loopchat.JoinSession(sessionID)
+	loopchat.JoinSession(rw, req)
 }
 
 // The LoopChat daemon does not serve the html to the browser currently, but
