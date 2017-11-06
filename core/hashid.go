@@ -9,7 +9,7 @@ func getHashID() string {
 	hd := hashids.NewData()
 	hd.Salt = uuid.NewV4().String()
 	hd.MinLength = 5
-	h := hashids.NewWithData(hd)
+	h, _ := hashids.NewWithData(hd)
 	id, _ := h.Encode([]int{666})
 
 	return id

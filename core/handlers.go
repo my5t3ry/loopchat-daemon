@@ -10,19 +10,21 @@ type Message struct {
 	Payload interface{} `json:"payload"`
 }
 
+// TODO (cw|11.4.2017) eventually inspect message payload and decide how to handle.
 func (s *Session) HandleIncoming(msgIn []byte) {
-	msgOut := Message{
-		Type:    "chat",
-		Payload: msgIn,
-	}
+	// NOTE: don't inspect they message just relay it back to all clients for now
+	// msgOut := Message{
+	// 	Type:    "chat",
+	// 	Payload: msgIn,
+	// }
 
-	// marshal message
-	bytes, err := json.Marshal(msgOut)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// // marshal message
+	// bytes, err := json.Marshal(msgOut)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	s.send(bytes, s.GetClients()...)
+	s.send(msgIn, s.GetClients()...)
 }
 
 func (s *Session) HandleRegistration(c *Client) {

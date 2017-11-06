@@ -95,7 +95,7 @@ func (c *Client) read() {
 			break
 		}
 
-		// pass incoming message to server
+		// pass incoming message to session
 		msg = bytes.TrimSpace(bytes.Replace(msg, []byte("\n"), []byte(" "), -1))
 		c.session.incoming <- msg
 
