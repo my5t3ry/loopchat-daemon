@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/connorwalsh/loopchat-daemon/core"
 	"github.com/fatih/color"
 	"github.com/gocraft/web"
+	"github.com/my5t3ry/loopchat-daemon/core"
 )
 
 var (
